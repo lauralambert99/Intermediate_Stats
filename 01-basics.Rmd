@@ -1,0 +1,153 @@
+# Basic Conventions 
+
+To begin, you will need to install R!  This is a first step, which is frequently followed by installing R Studio.  These are two different things, both of which are free and open source.  R Studio runs R, but in (to many people) a friendlier user interface.
+
+To download R, visit <https://cran.r-project.org/>, and select the correct link for your operating system.  Windows users will select the "base" option.  R Studio can be found at <https://posit.co/download/rstudio-desktop/>.  You will see on this page that it directs you to install R if you have not already.  If you have, proceed on to installing R Studio.  
+
+See the videos xxx and xxx for an introduction to R, R studio, and what the different windows you will see in R studio do.
+
+
+## Commenting Code
+
+When you start a line with a "#" symbol, it is a comment to yourself or anyone reading your code - R does not run these lines.  You should ALWAYS comment your code with what you are doing and why, so when you go back later, you'll remember what you were doing. This also makes it easy for someone else to follow your code.
+
+```{r comments, include = TRUE, eval = FALSE}
+#A comment looks like this
+mean(x) #A comment can also come after a section of code and in the same line
+```
+
+## The argument for syntax over dropdowns
+
+In a word: reproducibility.  When you have written syntax, or code, for an analysis or process, you and others are able to reproduce what you did faithfully and easily.  Additionally, there is documentation of what you did and how.  With drop downs, there is no documentation of what you did - were all the right boxes ticked?  Were all the selections correct?  Furthermore, if you wanted to run the analysis again, rather than hitting "run" on your code, you would have to go through all the drop down menus again.  
+
+As another note, when I first started using R, I was afraid of 'messing up': running the wrong code and doing the wrong thing to my data.  The beauty of running code in the console is if you do run the wrong thing (merge on the wrong variable or delete the wrong row), you can just start over at the beginning of your code and run everything up until your mistake.  Instant fix!  It took me a bit to realize this, which is why I share it up front.  Don't be afraid to make mistakes.  You can always read in your dataset again and run what did work.  No harm, no foul.  
+
+## What is a Function?
+A function tells R to do something.  You can see a number of functions below, with a variety of outcomes.  Functions can install packages (`install.packages()`), set a working directory (`setwd()`), calculate a mean (`mean()`), or perform a t test (`t.test()`).  Notice with all of the functions given as examples, and indeed all functions, there is the function name, followed by a set of parenthesis.  Every function takes at least one argument.  Some only take one, like `install.packages()`.  Some take more than one, like `t.test()`.  When there are multiple arguments a function can take, you will see the function and its arguments written out generically.  Arguments are parameters you can set for the function, like which column of a dataframe to use to calculate the mean, or if you want a t test to be one- or two-tailed.
+
+## Installing and Using Packages
+While base R can do most things that you need, there are additional packages that have been developed that have functions beyond what base R can do.  These can be a specialized set of functions for a specific task (eg. `haven`), a nicer way to visualize your data (eg. `ggplot2`), or a collection of functions that make wrangling data easier (eg. `tidyverse`).  Packages need to be installed from CRAN using the `install.packages()` function:  
+
+```{r packages, include = TRUE, eval = FALSE}
+#To install the package tidyverse:
+install.packages("tidyverse")
+```
+
+Packages only need to be installed once on a single machine, but if you switch between machines (say, between a desktop and a laptop, or between a lab computer and a personal computer), you will need to have the packages you are using installed on each computer.  
+
+Once you have installed a package, you need to let R know you want to use the functions from that package.  You do this by using the library function: `library(tidyverse)`.  It can be useful to have all the packages you will be using at the top of your code file; this lets you and anyone using your code what is needed.  However, there is nothing 'wrong' with simply calling the package before the first instance of its use in your code.  
+
+If you wanted more information about a package, you can type `?tidyverse` after you have called it (for more information about tidyverse; if you are looking up a different package, substitute the package name you are looking up for "tidyverse").  Information about the package, its authors, and helpful links will show up in the 'Help' pane.
+
+```{r library, include = TRUE, eval = FALSE}
+#Call the package
+library(tidyverse)
+
+#Get information about the package
+?tidyverse
+```
+
+## Setting a Working Directory {#wd}
+Setting a working directory can be nice; you won't have to type out file paths for everything you want to read in as long as they are all in the same folder.  For example, if all your files for Homework 1 are stored in a "HW1" folder, you can set your working directory to that folder, and just type in file names rather than full file paths.  You can set a working directory at the beginning of your session, and it will stay the same until you change it.  
+
+```{r working directory, include = TRUE, eval = FALSE}
+#Set a working directory
+setwd("file\\path\\goes\\here")
+```
+
+A shortcut to get the file path for PC users is to navigate to your folder, hold down shift, then right-click on the folder.  On the menu that pops up, select "copy as path".  You can then paste this into your `setwd()` function.  PC users will need to add the double \\ in order for R to be able to navigate to the location; Mac users can use the /.  PC users also have the option of changing all the \\ to /.    
+
+If you're not sure what your working directory is set to and would like to check, you can use `getwd()`, and the file path will print to your console.  
+
+```{r check wd, include = TRUE, eval = FALSE}
+#Check working directory
+getwd()
+
+```
+
+## Object Assignment Operator
+One symbol you will frequently see is `<-`. The `<-` is an assignment operator, and you can use it to assign a dataset to an object, a number to a variable (`N <- 250`), a list to an object (`fruits <- c("apple", "orange", "banana")`) or many other operations. The way you would literally read the `<-` operator is "NAME" `<-` (assigned to) "ITEM or FUNCTION".  Or, more understandably, you can think of it as "ITEM or FUNCTION" is called "NAME".  
+
+NOTE: the name you choose for your object should be something that you can remember what it is (eg: "fruits"), something short (eg: "df" for "dataframe"), and NOT a function in R (eg: "mean" would be a bad choice).  It should also either be all one word, or separated by underscores (all_students).  
+
+When you run the line of code that assigns something to an object, it looks as though nothing has happened.  There is no output in your console, no new tabs open, etc.  However, if you look over in your environment window you will see your new object, and some information about it. 
+
+## Datasets
+R has a number of datasets included with it, which are useful when testing out methods or showing examples of functions.  We will be using a number of these datasets as we work through the techniques illustrated in later chapters.  If you wanted to see them listed out with a brief description of what each one contains, you can run `library(help = "datasets")`.  This will open up a new tab with an alphabetical list of the datasets.  This does not download them, or assign them to any objects.  
+
+If you wanted to look at the details of a specific dataset, you could call that dataset specifically:
+```{r print dataset, include = TRUE, eval = TRUE}
+women
+```
+
+This will print the contents of the dataset to your console.  Most of the time, however, we do not want to just look at the dataset, but perform operations on it as a dataframe.  This requires assigning the dataset to an object: `df <- women`.   
+
+## Reading in Outside Files {#read}
+While the built-in datasets are nice for experimenting, most of your work will be on your own datasets: for homeworks, exams, or GA work.  It is quite easy to bring in a variety of different data types to R from common programs such as Excel, SAS, and SPSS.  Some file types (eg. SAS) will require packages to be installed first, while others (eg. .csv) can be read in by base R.  Below are the most common file types you will encounter, and how to read them in.  The easiest way to do this is to have the data files in your working directory (see \@ref(wd)).  If they are not in your working directory, you will need to type in the full file path.
+
+### Excel (.xlsx, .xls) {-}
+```{r excel, include = TRUE, eval = FALSE}
+install.packages("readxl") #Install package if you have not done so
+library(readxl) #Call the package
+
+#Pay attention to file extension!  Be sure what you type matches your file.
+#.xlsx
+df_excel_new <- read_excel("your_filename.xlsx") 
+
+#.xls (file not in working directory)
+df_excel_old <- read_excel("file\\path\\goes\\here\\data.xls")  
+
+```
+
+Excel files can also be read in by a specific sheet, if you have multiple sheets in one Excel file:
+```{r excel2, include = TRUE, eval = FALSE}
+#Read in by sheet number
+df_sheet2 <- read_excel("filename.xlsx", sheet = 2)
+
+#Read in by sheet number
+#Make sure to exactly match capitalization!
+df_stud <- read_excel("filename.xls", sheet = Students) 
+```
+
+### Delimited files (.tsv, .csv) {-}
+By default, R will use the first row of your imported data as column names.  If you do not want that, you would include `col_names = FALSE` after your file name (example given below).
+```{r delimited, include = TRUE, eval = FALSE}
+#To read in .tsv files, you need the readr package
+#This can also be used to read in .csv files
+#NOTE: if you have installed tidyverse, readr is contained within that package, and you won't need to reinstall it!
+install.packages("readr")
+library(readr)
+
+#Read in TSV file; file in working directory
+df_TSV <- read_tsv("filename.tsv") 
+
+#Reading in a .csv file using the readr package
+#Telling it that the first row should NOT be treated as column names 
+df_CSV <- read_csv("filename.csv", col_names = FALSE)
+
+#.csv files can also be read in using base R, with no external packages needed
+df_CSV_v2 <- read.csv("filename.csv") 
+```
+
+### SAS {-}
+```{r SAS, include = TRUE, eval = FALSE}
+install.packages("haven")
+library(haven)
+
+df_SAS <- read_sas("filename.sas7bdat") 
+
+```
+
+
+### SPSS {-}
+```{r SPSS, include = TRUE, eval = FALSE}
+install.packages("haven")
+library(haven)
+
+df_SPSS <- read_sav("filename.sav")
+```
+
+## Quotes
+R differentiates between strings (ie, words) and numbers by surrounding strings in quotes, as seen in `install.packages("ggplot2")`.  If 'ggplot2' was not surrounded by quotes, R would not recognize it as a package name.  Another example is in the creation of a list: `fruits <- c("apples", "oranges", "bananas")`.  This is a list of words.  If you run that line of code and look in your environment window, it will tell you that it is a list of characters ("chr"), and give you a preview. Strings are a different color in your code to visually differentiate them from code, comments, and numbers. While it is possible to use either single or double quotes to denote strings, best practice is to use double quotes.
+
+Numbers, on the other hand, are not surrounded by quotes.  A list of numbers would be created like this: `odd <- c(1, 3, 5, 7)`.  After running that line of code, you will see that 'odd' is in your environment as an integer ("int"; only whole numbers), and it gives you a preview of what is contained in the list.  You can perform operations on numbers, which you cannot do with characters.  Numbers are a different color in your code to visually differentiate them from code, comments, and strings.

@@ -1,0 +1,63 @@
+# Intro Stat Functions {#introstat}
+
+Many basic functions are intuitively named: mean, median, minimum, maximum, and standard deviation for example.  You can individually call these functions on a single column of a dataframe:
+
+```{r intro fxns, include = TRUE, eval = TRUE}
+#Mean
+mean(df$height)
+
+#Median
+median(df$height)
+
+#Minimum
+min(df$height)
+
+#Maximum
+max(df$height)
+
+#Standard Deviation
+sd(df$height)
+```
+
+You might run these to check your data, to verify coding of a new column, or because you just need that value for your analysis.  We can also assign the output to an object rather than just having it print to the console, for later use.
+
+```{r assign-mean, include = TRUE, eval = TRUE}
+m <- mean(df$height)
+```
+
+We could also get all of this information by using the `summary()` function.  This takes as input your dataframe, and returns out a table with the minimum (Min.), 1st quantile (1st Qu.), Median, Mean, 3rd quantile (3rd Qu.), and the maximum (Max.) for each numeric column.
+
+```{r summary, include = TRUE, eval = TRUE}
+summary(df)
+```
+
+## Mode
+Mode, unfortunately, is less easily obtained.  Should you need it, you will have to run the `mode` function below to write it, then use `mode()` on your column.  Onve you have run the function one time in your R session, you will not have to run it again.  However, if you switch machines, or close R and reopen it, you will have to re-run the function prior to use.  A bit annoying....  
+
+```{r mode, include = TRUE, eval = TRUE}
+#Run this first!
+mode <- function(x) {
+  u <- unique(x)
+  tab <- tabulate(match(x, u))
+  u[tab == max(tab)]
+}
+
+#Then you can use it as a function
+mode(df$height)
+```
+
+You'll notice that since there are no repeated numbers in the women dataset (what we have assigned to df), there are as many modes as there are entries.  Going to the cars dataset, we get:
+
+```{r mode2, include = TRUE, eval = TRUE}
+mode(cars$cyl)
+```
+
+
+## Psych Package for Data Summary
+There is also a package called psych that contains many useful functions, one of which is `describe()`.  Similar to `summary()`, it provides a number of different values.  However, it provides many more than summary: item name, item number, number of valid cases (n), mean, standard deviation, trimmed mean, median, median absolute deviation (mad), minimum, maximum, skew, kurtosis, and standard error.  
+```{r psych, include = TRUE, eval = TRUE}
+install.packages("psych") #Install psych if you have not already
+library(psych)  #Call the package
+
+describe(df)
+```

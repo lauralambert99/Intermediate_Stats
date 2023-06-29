@@ -1,0 +1,140 @@
+# Lists and Dataframes {#moreR}
+
+Here, we will cover a bit more about R: lists and some dataframe operations.  For Quant or A&M students, you will get more R in your 604 class; this is not intended to be an exhaustive delivery of information.  Rather, it is intended to be enough for you to be successful in 605.  
+
+## Lists
+Sometimes you will get data in (or generate it) as a series of lists.  Or, perhaps you need to make a list of fake ID numbers, or options to draw from.  Whatever the reason, there are a number of different ways to accomplish this.  
+
+One way is to simply assign a series of values or words to an object, making a list:
+
+```{r make list, include = TRUE, eval = FALSE}
+#Make a list
+odd <- c(1, 3, 5, 7, 9)  #A list with numbers (integers, specifically)
+gender <- c("male", "female", "nonbinary", "prefer not to respond")  #A list of strings (words)
+```
+
+While this is simple, it can get to be time consuming, particularly if you have many values to input.  For example, you wouldn't want to have to type out the numbers 1 through 5000 counting by ones individually!  If you had a case like that, you could make use of the `seq()` function, which creates a sequence of numnbers.
+
+```{r seq1, include = TRUE, eval = FALSE}
+#Make a sequence of numbers by using the seq() function
+numbers <- seq(1:10)
+
+numbers2 <- seq(1, 10)
+```
+
+The above will create a list, `numbers` of the numbers 1 through 10, inclusive of both 1 and 10.  For the example above, if we needed to go from 1 to 5000, we would simply adjust our ending number: `seq(1:5000)` or `seq(1, 5000)`.  You can also use the `seq()` function to count by a value other than one: by 10s, or only odd or even numbers (counting by 2).  We accomplish this by adding an additional argument to the `seq()` function: `by = x`.  In the parenthesis after `seq`, we would give our starting value, ending value, and by what interval we want R to generate numbers: `seq(start, end, by = interval)`.    
+
+```{r seq2, include = TRUE, eval = TRUE}
+#Count by 10s
+numbers_v2 <- seq(10, 100, by = 10)
+numbers_v2
+
+#Count by 2s
+odd_v2 <- seq(1, 197, by = 2) #Not reading this out - perhaps for obvious reasons!
+```
+
+While the `numbers_v2` was output as an example, you will typically not print your list to the console, but rather perform an operation on it, add it to your dataframe, or just save it for later calculations.  
+
+Lastly, something that may be useful is being able to pick a certain number from a list - in the example below, we are selecting the 14th number from our `odd_v2` list.  This will print the value to the console.  You can also save it as an object if you needed.
+
+```{r list-val, include = TRUE, eval = TRUE}
+#Picking a value out of a list (14th number)
+odd_v2[14] 
+
+#Saving the same value as an object
+val <- odd_v2[14]
+```
+
+## Dataframes {#df}
+Dataframes are the most common data format you will be working with.  There are a wide range of things that can be done with them, but we will focus on just a few below.  As we've seen before, we can load in a dataset from either a pre-existing R dataset or an external source (see \@ref(read) for a refresher), and assign that to an object in R:  
+
+```{r load data, include = TRUE, eval = TRUE}
+#Assign a pre-existing dataset to a dataframe object
+df <- women 
+```
+
+### Look at first or last few rows
+Once assigned to an object, we can look at it, perform operations on it, and do statistical testing.  Some dataset operations that come in handy after first loading in data are looking at the first or last 6 rows.  After performing an operation or creating a variable, it is wise to check that what you think you did actually worked correctly.  This is accomplished by 'taking a peek' at your dataset.  If you wanted to look at the first 6 rows, you would use the `head()` function, whereas if you wanted to look at the last 6 rows you would use the `tail()` function.  These are both used in place of printing your entire dataset to the console. 
+
+```{r datasets2, include = TRUE, eval = TRUE}
+#Looking at the first 6 rows of the dataset
+head(df)
+
+#Looking at the last 6 rows of the dataset
+tail(df)
+```
+
+### Referencing Specific Columns
+
+Sometimes, you want to perform an operation on just one column of your dataframe.  To reference a specific column, you will make use of the `$` operator: `df$name` would be interpreted as you want the column "name" from the dataframe "df".  We can also reference a column by it's place in the dataframe: column 1, column 2, etc.  We would do this using the following `df[row,column]` convention.  That is to say, if we wanted all rows of the first column, we would do `df[,1]`.  We are referencing the dataframe `df`, saying we want all rows by leaving that part blank, and saying we want column 1.  Both of these column selection options perform equally, and it is often a matter of personal preference which you choose when selecting a single column.   
+
+```{r column, include = TRUE, eval = TRUE}
+#Select the height column
+df$height
+
+#Select the first column.  
+df[,1]
+```
+
+What if you forget what your variables are called?  You can look in your 'Environment' window, click on your object, and it will open into a new tab in the Source window.  Alternatively, you can use the function `names()` to print the column names.
+```{r names, include = TRUE, eval = TRUE}
+#Get variable names for our dataset
+names(df)
+```
+
+
+### Referencing Specific Values
+In a list, we could reference a specific value by where it fell in the list (\@ref(lists)).  In a dataframe, there is both a row and a column to reference.  Above, we referenced an entire column by it's location in the dataframe.  We can use this same convention to reference a specific value.
+```{r specific value, include = TRUE, eval = TRUE}
+#Print the value that is in the first column, 4th row to the console
+df[4,1]
+```
+
+  
+
+## Change Variable Name
+Sometimes you get in data, but you need (or want!) to change some things about it.  Perhaps you need to change column names to match other data, or so you better remember what it represents.  There are two ways to change a variable (ie: column) name: reference it by number or reference it by name.  Both ways will make use of the `names()` function used above.  
+
+```{r change var by num, include = TRUE, eval = TRUE}
+#Rename height to 'height(in)'
+names(df)[1] <- "height(in)"
+
+#Check our work
+head(df)
+```
+
+In the function, we are calling the names of the variables, as we did earlier, with `names(df)`.  We are then saying that the first entry in that list(`[1]`) should be replaced with "height(in)" (`<- "height(in)"`).
+
+We can also change variable names by referencing its name.
+```{r change var by name, include = TRUE, eval = TRUE}
+#Change 'height(in)' back to 'height'
+names(df)[names(df) == "height(in)"] <- "height"
+
+#Check our work
+head(df)
+```
+
+Just like when we changed the name using the column number, we start by calling the names of all the variables with `names(df)`.  Then, we are saying that within that list of names (`[names(df)`) we want the column exactly named (`==`) 'height(in)' (`"height(in)"]`).  Lastly, we now want that name to be replaced with 'height' (`<- "height"`).  
+
+
+## Generating a Count Table
+If you wanted to know the count of each unique entry of a variable, you would use the `table()` function.  This generates a count of how many entries are the same in a given variable.
+```{r count, include = TRUE, eval = TRUE}
+#Count by height on women dataset (we've assigned that to the object df)
+table(df$height)
+```
+
+You'll notice in this case that the count table is not terribly useful; there's only one entry for each height.  To better illustrate this, we can use another built-in dataset, mtcars.  
+```{r count2, include = TRUE, eval = TRUE}
+#Load in dataset, assign to "cars"
+cars <- mtcars
+
+#See what the variables are
+names(cars)
+
+#One of the variables in this dataset is "cyl"
+#Ask for a count of the cyl
+table(cars$cyl)
+```
+
+From this, we can see that 11 entries have 4 cylinders, 7 have 6 cylinders, and 14 have 8 cylinders.
