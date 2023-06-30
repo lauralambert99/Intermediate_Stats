@@ -1,0 +1,7 @@
+# T-Tests {-}
+The following chapters will address the different types of t tests performed in this class:  
+
+- [Chapter 5](#ostt) will address One Sample t-tests
+- [Chapter 6](#istt) will address Independent Sample t-tests
+- Chapter 7 will address Repeated Measures t tests
+

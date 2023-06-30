@@ -1,4 +1,5 @@
 # Intro Stat Functions {#introstat}
+Packages used: `psych`.
 
 Many basic functions are intuitively named: mean, median, minimum, maximum, and standard deviation for example.  You can individually call these functions on a single column of a dataframe:
 

@@ -1,0 +1,72 @@
+--- 
+title: "A Minimal Book Example"
+author: "Laura Lambert"
+date: "`r Sys.Date()`"
+site: bookdown::bookdown_site
+documentclass: book
+bibliography: [book.bib, packages.bib]
+# url: your book url like https://bookdown.org/yihui/bookdown
+# cover-image: path to the social sharing image like images/cover.jpg
+description: |
+  This is a compilation of R code and output interpretation to accompany an Intermediate
+  Inferential Statistics course taught at JMU.  It is not intended to teach the statistics,
+  but rather to support R coding and interpretation.
+link-citations: yes
+github-repo: rstudio/bookdown-demo
+---
+
+# About
+
+This book is intended to serve as a guide for the R functions you will be running in PSYC 605.  The statistics will be covered in class; this is to support your analysis using R.  This is not intended to be an exhaustive guide to R but rather a tool to aid in your work.
+
+## What different things mean
+When there is text typed like this, it is informational or descriptive, telling you how to do something.
+
+Text that appears to be highlighted in grey, such as the function `mean(cars$cyl)`, is R code.  This is used when referencing a specific function or portion of code.  
+
+You will also find longer bits of code that are set in to the main text, as below:
+```{r intro, include = TRUE, eval = FALSE}
+#Here is a comment in the code
+#And below is code
+cars <- mtcars
+```
+
+This offset code will often come with output below it, to allow you to see both the code and what, if anything, it generates.  It will also be commented, as an example of best practice and to aid in explanation.
+
+NOTE: While it is best practice in code to load all necessary packages at the start of the script, I will be loading in packages as we use them to illustrate what functionality we are using.  I will, however, name all the packages we use in a particular chapter up front.
+
+
+
+The `index.Rmd` file is required, and is also your first book chapter. It will be the homepage when you render the book.
+
+## Render book
+
+You can render the HTML version of this example book without changing anything:
+
+1. Find the **Build** pane in the RStudio IDE, and
+
+1. Click on **Build Book**, then select your output format, or select "All formats" if you'd like to use multiple formats from the same book source files.
+
+Or build the book from the R console:
+
+```{r, eval=FALSE}
+bookdown::render_book()
+```
+
+To render this example to PDF as a `bookdown::pdf_book`, you'll need to install XeLaTeX. You are recommended to install TinyTeX (which includes XeLaTeX): <https://yihui.org/tinytex/>.
+
+## Preview book
+
+As you work, you may start a local server to live preview this HTML book. This preview will update as you edit the book when you save individual .Rmd files. You can start the server in a work session by using the RStudio add-in "Preview book", or from the R console:
+
+```{r eval=FALSE}
+bookdown::serve_book()
+```
+
+
+```{r include=FALSE}
+# automatically create a bib database for R packages
+knitr::write_bib(c(
+  .packages(), 'bookdown', 'knitr', 'rmarkdown', 'psych', 'ggplot2'
+), 'packages.bib')
+```

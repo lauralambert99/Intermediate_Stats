@@ -1,12 +1,6 @@
-# T-Tests {-}
-The following chapters will address the different types of t tests performed in this class:  
-
-- [Chapter 4](#ostt) will address One Sample t-tests
-- [Chapter 5](#istt) will address Independent Sample t-tests
-- Chapter 6 will address Repeated Measures t tests
-
-
 # One Sample t-test {#ostt}
+Packages used: `ggplot2`, `effectsize`.  
+
 The first step in a t-test is to look at your data and check your assumptions.  We learned how to look at our data in the last chapter (\@ref introstat).  For this, we are going to switch datasets to the `trees` dataset.  This contains measurements of the diameter in inches (Girth), height in feet (Height), and volume of timber (Volume) of 31 black cherry trees.
 
 ```{r trees, include = TRUE, eval = TRUE}
@@ -30,7 +24,7 @@ sd(trees$Height)
 ## Check Assumptions
 We can see how our data is distributed by using a histogram.  `ggplot2` is a package with a wide range of graphing capabilities that we will be using for our graphs.  There is a later chapter (PUT CHAP REF HERE) specifically on ggplot that explains in more detail what goes with each argument. For this histogram, we are specifying what data to use (`trees`), and what variable we want to look at (`Height`).  We then say that we would like a histogram (`geom_histogram`).
 
-```{r ostt hist, include = TRUE, eval = TRUE, warning = FALSE}
+```{r ostt hist, include = TRUE, eval = TRUE, warning = FALSE, message = FALSE}
 #Call ggplot
 library(ggplot2)
 
