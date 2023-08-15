@@ -1,3 +1,6 @@
+# (APPENDIX) Appendix {-}
+# Basics Code
+```{r, code-basics, echo = TRUE, eval = FALSE}
 ################################################################################
 #                       R Basics
 ################################################################################
@@ -64,5 +67,9 @@ df_SAS <- read_sas("filename.sas7bdat")
 #SPSS
 install.packages("haven")
 library(haven)
+```
 
-df_SPSS <- read_sav("filename.sav")
+
+# Lists and Dataframes Code
+ahjsfdl
+

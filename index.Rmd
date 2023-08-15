@@ -19,6 +19,8 @@ github-repo: rstudio/bookdown-demo
 
 This book is intended to serve as a guide for the R functions you will be running in PSYC 605.  The statistics will be covered in class; this is to support your analysis using R.  This is not intended to be an exhaustive guide to R but rather a tool to aid in your work.
 
+For clarity's sake, repeated tests between statistical techniques will be fully explained each time to prevent needing to reference prior chapters.  For example, tests of normality will be fully explained for different t-tests and ANOVAs.  This may be repetitive, but it also allows each chapter to be fully stand-alone.
+
 ## What different things mean
 When there is text typed like this, it is informational or descriptive, telling you how to do something.
 
@@ -33,11 +35,11 @@ cars <- mtcars
 
 This offset code will often come with output below it, to allow you to see both the code and what, if anything, it generates.  It will also be commented, as an example of best practice and to aid in explanation.
 
-NOTE: While it is best practice in code to load all necessary packages at the start of the script, I will be loading in packages as we use them to illustrate what functionality we are using.  I will, however, name all the packages we use in a particular chapter up front.
+NOTE: While it is best practice in code to load all necessary packages at the start of the script, I will be loading in packages as we use them to illustrate what functionality we are using.  I will, however, name all the packages we use in a particular chapter up front.  Further, I do not include `install.packages()` for every package that is used.  If you don't have the package, install it first.  
 
 
 
-The `index.Rmd` file is required, and is also your first book chapter. It will be the homepage when you render the book.
+
 
 ## Render book
 
@@ -67,6 +69,6 @@ bookdown::serve_book()
 ```{r include=FALSE}
 # automatically create a bib database for R packages
 knitr::write_bib(c(
-  .packages(), 'bookdown', 'knitr', 'rmarkdown', 'psych', 'ggplot2'
+  .packages(), 'afex', 'bookdown', 'car', 'datarium', 'DiagrammeR', 'ggplot2', 'gt', 'knitr', 'psych', 'qqplotr', 'rmarkdown', 'rstatix',  'tidyverse', 'viridis'
 ), 'packages.bib')
 ```

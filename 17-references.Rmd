@@ -1,0 +1,10 @@
+`r if (knitr::is_html_output()) '
+# References {-}
+'`
+Creation of this guide would not have been possible without the numerous R packages listed.  Additionally, the following guides and open resources contributed to the completion of this guide, and are great resources to have available for further reference:
+
+  - <datanovia.com>
+  - <rcompanion.org>
+  - <bcdudek.net/tutorials.html>
+  - <stat-methods.com/>
+  
