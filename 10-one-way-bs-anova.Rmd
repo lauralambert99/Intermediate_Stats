@@ -1,0 +1,325 @@
+# One-Way Between Subjects ANOVA {#owbsa}
+
+A one-way between subjects ANOVA is used to test differences in the means of the dependent variable (DV) among different levels of an independent variable (IV).  The first check that must be made is if our data are of the correct form:  a categorical (also called discrete) IV and an interval or ratio DV. Much of the grouping techniques used for the between subjects ANOVA will mirror the grouping techniques performed in the [independent samples t-test](#istt).  For clarity, I will be repeating much of what was already explained, though perhaps with slightly less detail.   
+
+Packages used: `psych`, `tidyverse`, `ggplot2`, `qqplotr`, `viridis`, `car`, `lsr`, `onewaytests`, `emmeans`  
+Optional packages: `DescTools`
+
+
+
+The data:
+We will be using the InsectSprays dataset from R, which gives the count of insects after treatment with different insecticides.  Lower counts indicate lower insect survival, and more effective insecticide. 
+
+```{r, owbsa-data, include = TRUE, eval = TRUE}
+#Load the data
+bugs <- InsectSprays
+
+#Look at the data
+head(bugs)
+```
+
+Looking at the data, we can see that `spray` is a categorical variable, and count is a ratio variable.  This allows us to perform an ANOVA, provided assumptions are met.
+
+## Descriptive Statistics
+We can first take a look at the descriptive statistics for our data, broken down by treatment group.  To do this, we will use the `describeBy()` function from the `psych` package.
+
+```{r, owbsa-descriptives, include = TRUE, eval = TRUE, warning = FALSE}
+#Call the package
+library(psych)
+
+#Get the descriptives by group
+describeBy(bugs$count, group = bugs$spray)
+```
+
+From this, we can see the means of each group, along with min/max values and skew and kurtosis and other values.   
+
+We can also use a box plot to examine our data, and look for outliers in each of the groups.   To do this, we will use `ggplot2` to create boxplots by group.  First, we define our data (`data = bugs`), x (`x = spray`), and y (`y = count`) values.  The x value is our grouping variable, and our y value is the one we are comparing.  The next line is the boxplot function (`geom_boxplot()`), and the last line prints each data point as a dot on the box plot (`geom_jitter()`).  
+
+
+```{r, owbsa-box, include = TRUE, eval = TRUE, warning = FALSE, message = FALSE}
+#Call ggplot
+library(ggplot2)
+
+#Generate a boxplot
+ggplot(data = bugs, aes(x = spray, y = count)) + 
+  geom_boxplot() +
+  geom_jitter(width = .2)
+
+```
+
+Looking at the boxplots, we can see that spray C and D appear to have two rather extreme outliers each, and sprays A and F have some data points that could be considered outliers.  
+
+## Assumptions
+We will test assumptions for each of the groups, rather than on the data as a whole.  In order to get R to split by group, we will make use of the 'pipe'(`%>%`) from the `tidyverse` package.
+
+### Normality
+
+### Shapiro-Wilk {-}
+We will begin by running a Shapiro-Wilk test to test each group for normality.  The `shapiro.test()` will allow us to get the test, though we will need to assign it to an object and ask for the information in a table.  Specifically, we will be asking for the W statistic, or Shaprio-Wilk statistic, and the p-value from the test.  
+
+In the code below, we first call the `tidyverse` package to allow us to split by group before moving on to running the Shapiro-Wilk test.  Then, we specify our data (`bugs`) and send it on to the next line (`%>%`).  We next specify which variable R should group by with the `group_by()` function - this time, it is the 'spray' variable.  The line `group_by(spray)` takes our dataframe and groups it by spray type.  Then, we send that on (`%>%`) to the Shapiro-Wilk test.  
+
+Running the Shapiro-Wilk test, we start with the `summarise()` function, and define what our columns will be.  The first column is the Shapiro-Wilk statistic, named "S-W Statistic", and we specify that the value in this column should be the statistic from the function: `"S-W Statistic" = shapiro.test(count)$statistic`.  We see that we are still calling the `shapiro.test()` function on the 'count' column (`shapiro.test(count)`), but then we are including `$statistic` because that's the value we want in this column.  In the second column we specify that the values should be the p-value from the `shapiro.test()` function: `"p-value" = shapiro.test(count)$p.value`.  
+
+```{r, owbsa-sw, include = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+#Call tidyverse package
+library(tidyverse)
+
+#Run the Shapiro-Wilk test
+bugs %>%   #Call our dataframe and send it on
+  group_by(spray) %>%    #Group by our grouping variable
+  summarise("S-W Statistic" = shapiro.test(count)$statistic,   #Give us the statistics we want, in a table
+            "p-value" = shapiro.test(count)$p.value)
+```
+
+We can see that sprays A, B, E, and F have non-significant p-values, indicating that they do not have a distribution that is significantly different than a normal distribution.  However, sprays C and D have significant p-values, indicating that they do have a distribution that is significantly different than a normal distribution, thus violating the assumption of normality.  We will be continuing, to illustrate the other checks and how to run an ANOVA.  
+
+
+### Histogram {-}
+
+We can also check the normality assumption visually, by generating histograms of each group.  Given that we have six groups, we will be creating separate histograms for each group.
+
+The stacked histogram is generated much the same as a unstacked one, with the exception of the function `facet_grid(~ spray)`.  This is what is generating one histogram per group.  The `facet_grid()` function allows separate plots per group.  If you'd like them as a vertical stack rather than side-by-side, use `spray ~ .`. At the end, `theme_minimal()` is addressing how the graphs look - getting rid of the grey background, for example.
+
+
+```{r, owbsa-hist, include = TRUE, eval = TRUE, warning = FALSE, message = FALSE}
+#Generate side-by-side histograms
+ggplot(data = bugs, aes(x = count)) +
+  geom_histogram() +
+  facet_grid(~ spray) +
+  theme_minimal()
+```  
+
+These histograms show that, visually, sprays C and D are not as normally distributed as the other sprays. 
+
+### QQ Plot {-}
+Another visual inspection we can do involves a Q-Q plot.  We will use the package `qqplotr` to make these, as an addition to `ggplot2`.  
+
+Breaking down the code we will use to generate the plot:  
+  1.  `ggplot(data = bugs, mapping = aes(sample = count, color = spray, fill = spray)) +` is our call to ggplot.  We are defining what data to use (`data = bugs`), and then giving some arguments to the `aes()` function.  `sample = count` says to use the variable 'count',  `color = spray` is asking for each spray type to be a different color, and `fill = spray` corresponds to the filled in portion.  To ensure colorblind friendliness, we will specify colors below. 
+  2.  `stat_qq_band(alpha=0.5, conf=0.95, qtype=1, bandType = "ts") +` is our first function using the `qqploter` package, and contains arguments about the confidence bands.  This is defining the alpha level (`alpha = 0.5`) and the confidence interval (`conf = 0.95`) to use for the confidence bands.  `bandType = "pointwise"` is saying to construct the confidence bands based on Normal confidence intervals.  
+  3.  `stat_qq_line(identity = TRUE) +` is another call to the `qqplottr` package and contains arguments about the line going through the qq plot.  The argument `identity = TRUE` says to use the identity line as the reference to construct the confidence bands around.
+  4.  `stat_qq_point(col = "black") +`  is the last call to the `qqplottr` package and contains arguments about the data points. `col = "black"` means we'd like them to be black.  
+  5.  `facet_wrap(~ spray, scales = "free") +` is a similar argument to the  bar plot above.  This is sorting by group (`~ spray`), and creating a qq plot for each of our sprays.  The `scales = "free"` refers to the scales of the axes; by setting them to "free" we are allowing them to freely vary between each of the graphs.  If you want the scale to be fixed, you would use `scale = "fixed"`.  
+  6.  `labs(x = "Theoretical Quantiles", y = "Sample Quantiles") +` is a labeling function.  Here, we are labeling the x and y axis (`x =` and `y =` respectively). 
+  7.  `scale_fill_viridis(discrete = TRUE)` is specifying a color fill that is colorblind friendly as well as grey-scale friendly.  Since these are discrete groups, we add `discrete = TRUE`.
+  8.  `scale_color_viridis(discrete = TRUE)` is again using a colorblind friendly scale for the outlines, to match the fill.
+  9.  Lastly, `theme_bw()` is giving an overall preset theme to the graphs - this touches on things such as background, axis lines, grid lines, etc.
+
+
+```{r, owbsa-qq, include = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+#Call qqplotr
+library(qqplotr)
+
+#Call viridis
+library(viridis)
+
+#Perform QQ plots by group
+ggplot(data = bugs, mapping = aes(sample = count, color = spray, fill = spray)) +
+  stat_qq_band(alpha = 0.5, conf = 0.95, bandType = "pointwise") +
+  stat_qq_line(identity = TRUE) +
+  stat_qq_point(col = "black") +
+  facet_wrap(~ spray, scales = "free") +
+  labs(x = "Theoretical Quantiles", y = "Sample Quantiles") + 
+  scale_fill_viridis(discrete = TRUE) +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+
+```
+Looking at the Q-Q plot, what becomes more obvious is the pull the outliers have on the data in sprays C and D.
+
+### Detrended QQ Plot {-}
+We can also make a detrended Q-Q plot using the same code but adding `detrend = TRUE` to all of the `stat_qq_` functions.  
+
+```{r, owbsa-de-qq, include = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+#Perform detrended QQ plots by group
+ggplot(data = bugs, mapping = aes(sample = count, color = spray, fill = spray)) +
+  stat_qq_band(alpha = 0.5, conf = 0.95, bandType = "pointwise", detrend = TRUE) +
+  stat_qq_line(identity = TRUE, detrend = TRUE) +
+  stat_qq_point(col = "black", detrend = TRUE) +
+  facet_wrap(~ spray, scales = "free") +
+  labs(x = "Theoretical Quantiles", y = "Sample Quantiles") + 
+  scale_fill_viridis(discrete = TRUE) +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+```
+
+Looking at both the regular and detrended Q-Q plots, we can see that sprays A, B, E, and F seem to be pretty normally distributed.  We can also see that C and D are not, potentially due to the effect of one or two extreme outliers.   
+
+
+### Homogeneity of Variance
+We will test the homogeneity of variance between the spray types with the Levene's Test and the Brown-Forsyth Test.  Both tests use the same function from the package `car`, `leveneTest()`, but with the argument `center =` we can differentiate between the two.  
+
+```{r, owbsa-Levene, include = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+#Call the car package
+library(car)
+
+#Perform Levene's Test
+LT_bugs <- leveneTest(count ~ spray, data=bugs, center="mean")
+
+#Perform Brown-Forsythe test
+BFT_bugs <- leveneTest(count ~ spray, data=bugs, center="median")
+
+#Print both of them
+print(LT_bugs)
+print(BFT_bugs)
+```
+
+We see that both values are significant, indicating that we reject the null that the variances are the same.  The assumption of homogeneity of variances is not met. 
+
+## Run the one-way between subjects ANOVA
+Were this not for illustrative purposes, we would reconsider running an ANOVA due to the fact that both the normality and homogeneity of variance assumptions have been violated.  However, we will proceed, in order to work through the code.  
+
+There are a number of different approaches that can be taken when running a one-way between subjects ANOVA, two of which will be given as examples here: the `aov()` function and the `lm()` function.
+
+### AOV {-}
+Using the `aov()` function, we first assign the formula to an object (`model_b1` here), so we can later get summary statistics.  We put in that we want `count` modeled as a function of `spray` (`count ~ spray`), and that our data is the `bugs` dataframe (`data = bugs`).  When we run the first line, we don't see any output, because we have assigned it to an object.  However, if we ask for the summary of that model (`summary(model_b1)`), we get the output seen below.
+
+```{r, owbsa-anova-aov, include = TRUE, eval = TRUE}
+#Using aov
+model_b1 <- aov(count ~ spray, data = bugs)
+
+#Get the model summary
+summary(model_b1)
+
+```
+From the output, we can see that the ANOVA is significant, with p < 0.001 and an F( with 5 and 66 degrees of freedom) of 34.7.  It also provides us with the Sum of Squares and Mean Squares.
+
+### LM {-}
+Setting up an ANOVA using `lm()` (lm = linear model) is pretty much the same, except for switching out the function we use.  We are again assigning the output to an object (`model_b2` this time), then specifying the formula (`count ~ spray`) and our data (`data = bugs`).  After running the first line, nothing appears, since the output was assigned to the `model_b2` object.  However, we can ask for a summary, which looks much like a summary we would get after doing a regression.  To get an ANOVA table, we run the `anova()` function on the object.
+
+```{r, owbsa-anova-lm, include = TRUE, eval = TRUE}
+#Using lm
+model_b2 <- lm(count ~ spray, data = bugs)
+
+#Get the model summary
+summary(model_b2)
+
+#Then an anova table for model b2
+anova(model_b2)
+```
+
+Looking at the summary, we get a coefficients table.  This will be addressed in another course, so for now we will just pass this by.  Running an ANOVA on the model gives us an ANOVA table - this looks nearly identical to the one obtained with `aov()` with the exception of the number of decimal places provided.  We again get significance, an F statistic with degrees of freedom, and Sum of Squares and Mean Square.
+
+Since we had unequal variances, thereby violating the homogeneity of variances assumption, we should do either a Welch or a Brown-Forsythe test for equal means.  For the Brown-Forsythe test, we will be using the `bf.test()` function from the `onewaytests` package.  As before, we specify our formula (`count ~ spray`) and our data (`data = bugs`) to the function, and get our output.  The Welch's test is done with the `oneway.test()` function in base R.  Along with the formula and data specification, we add `var.equal = FALSE` to indicate we do not have equal variances.
+
+```{r, onbsa-welch-BF, include = TRUE, eval = TRUE}
+#Call onewaytests package for Brown-Forsythe test for equal means
+library(onewaytests)
+
+#Perform the test
+bf.test(count ~ spray, data = bugs)
+
+#Perform Welch's test for equal means
+oneway.test(count ~ spray, data = bugs, var.equal = FALSE)
+```
+
+Looking at the output, we can first see that both tests are significant, indicating that at least one spray is different than the others, taking into account the fact that we have violated the homogeneity of variances assumption.  Additionally, note the denominator degrees of freedom: it is no longer a whole number.  This is how the unequal variances are taken into account.
+
+Given that p < 0.05 for the ANOVA, we reject the null hypothesis and conclude that at least one spray is different than the others in terms of number of insects surviving.
+
+We can also calculate $\eta^{2}$ using the `etaSquared()` function from the `lsr` package.  Conveniently, it does not matter which method we used to create our model (aov() vs lm()), both will be understood by the function.  This simply requires feeding the model object to the `etaSquared()` function.  Since this is a one-way ANOVA, the eta squared and partial eta squared are identical; later ANOVAs will make use of one over the other.
+
+```{r, owbsa-eta, include = TRUE, eval = TRUE}
+#Load lsr package
+library(lsr)
+
+#Calculate eta-squared
+etaSquared(model_b1)
+etaSquared(model_b2)
+```
+
+We can see that $\eta^{2}$ = 0.72, which would be considered a large effect size.
+
+## Post-hoc tests
+Since there is a significant main effect, we will be performing multiple comparisons to determine where the differences in the DV are (ie, is spray C the only one different than all the rest, or are sprays C and D different than A, B, E, and F?)
+
+### Pairwise comparisons
+We can do pairwise comparisons between each set of sprays to see which are different from each other.  Depending on which PostHoc method you choose (Bonferroni, Tukey, Scheffe are given as examples) will dictate which function you will run.  Each have slightly different ways of adjusting the p-values to account for the additional testing being performed.  All the different adjustments should produce similar results.  ***We first look at the `emmeans()` package, and then give options to run each example individually.***
+
+### Using emmeans() for Pairwise Comparisons
+The `emmeans()` function has a wide range of versatility both in what model objects it can accept (both our `aov()` and `lm()` models, for example) as well as what type of post-hoc comparisons it can perform.  For the pairwise comparisons, we just need to specify which adjustment method we would like for it to use under the `adjust =` argument.  I will be modelling three different methods: Bonferroni, Tukey's HSD, and Scheffe as examples.
+
+Looking at the code below, you can see that for each adjustment, we are assigning it to an object.  We can use that object later for contrasts or plotting if desired.  The `emmeans()` function first takes an ANOVA model (`model_b1` here).  Then, we specify that we want to do pairwise comparisons, and our grouping variable is spray (`pairwise ~ spray`).  Lastly, we have how we want the p-values adjusted (`adjust = "bonferroni"`, for example).  
+
+```{r, owbsa-post-mm, include = TRUE, eval = TRUE}
+#Call emmeans package
+library(emmeans)
+
+#Compute expected marginal means post-hoc tests
+posthocs <- emmeans(model_b1, pairwise ~ spray, adjust = "bonferroni")
+posthocs2 <- emmeans(model_b1, pairwise ~ spray, adjust = "tukey")
+posthocs3 <- emmeans(model_b1, pairwise ~ spray, adjust = "scheffe")
+
+#Bonferroni adjustment results
+posthocs
+
+#Tukey's HSD adjustment results
+posthocs2
+
+#Scheffe adjustment results
+posthocs3
+```
+
+Looking at the output, we can see that while the p-values differ slightly for each adjustment method, the results don't really change: A-B, A-F, B-F, C-D, C-E, and D-E do not differ from each other in any of the pairwise comparisons.  The output contains two tables.  The first, and smaller, table provides the mean, pooled standard error (`SE`), degrees of freedom, and upper and lower confidence intervals for the mean for each of the sprays.  The second table is the pairwise comparisons, with the mean difference between each pair (`estimate`), along with the associated p-value.  
+
+### Running each adjustment method separately - ***JOE SHOULD THIS BE INCLUDED????***
+Below is how you can run each of the adjustment methods discussed above individually, and outside the `emmeans()` package.
+
+### Bonferroni {-}
+The Bonferroni adjustment for a pairwise comparison is accomplished using the `pairwise.t.test()` function and specifying which p-value adjustment method to use (`p.adj = "bonf"`).  In the function below, we first specify what our DV is (`bugs$count`) followed by our grouping variable (`bugs$spray`).  This time we needed to include `bugs$` since there is not a data definition option within the function.  Running this will give us a table of p-values between each possible comparison.  The upper diagonal will be filled with "-" since it is a repeat of the lower diagonal.
+
+```{r, owbsa-bonf, include = TRUE, eval = TRUE}
+#Bonferroni pairwise comparison
+pairwise.t.test(bugs$count, bugs$spray, p.adj = "bonf")
+```
+
+Looking at the output, we can see that spray combinations A-B, A-F, B-F, C-D, C-E, and D-E do not differ from each other.  The other combinations differ from each other with p < 0.001.
+
+### Tukey's HSD {-}
+We can perform Tukey's HSD adjustment on pairwise comparisons using the `TukeyHSD()` function from base R, but it can only be used on an `aov()` object (ie, it will work on our `model_b1` but will not work on `model_b2`).  This is also a base R function, so no libraries to call.  To run this, we feed our aov model to the `TukeyHSD()` function (remember this is `model_b1`), followed by our desired confidence level (`conf.level = .95`).  
+
+```{r, owbsa-tukey, include = TRUE, eval = TRUE}
+#Tukey's HSD pairwise comparison
+TukeyHSD(model_b1, conf.level = .95)
+```
+
+Looking at the output, we see that it is a slightly different format from the Bonferroni adjustment, and some additional information.  This is in a table, with the pairs along the far left, the mean difference between them in the `diff` column, and the p-value in the far right column (`p adj`).  We see a similar pattern as before, where spray pairs A-B, A-F, B-F, C-D, C-E, and D-E are not significantly different from one another and all other pairs being significantly different.  Also notice that it is the same six pairs that are not significantly different from each other as we saw in the Bonferroni adjustment.
+
+### Scheffe adjustment {-}
+The Scheffe adjustment can be performed using the `ScheffeTest()` function from the `DescTools` package.  As with the Tukey's HSD test, an `aov()` model object is fed into the function; we cannot use a `lm()` model object.  We also specify our grouping variable (`g = spray`).
+```{r, owbsa-scheffe, include = TRUE, eval = TRUE}
+#Call the DescTools package
+library(DescTools)
+
+#Run the Scheffe adjustment pairwise comparison
+ScheffeTest(model_b1, g = spray)
+```
+
+The output looks very similar to the Tukey's HSD output in that it is a table with the mean difference, upper and lower confidence intervals, and a p-value (`pval`).  As before, spray pairs A-B, A-F, B-F, C-D, C-E, and D-E are not significantly different from one another while all other pairs are.
+
+
+### Custom contrasts
+We can also perform custom comparisons using the `emmeans` package and the `contrast()` function.  Since we had previously specified to run pairwise comparisons in our emmeans model, we re-specify our model to just have group statistics (`emmeans(model_b1, "spray", data = bugs`).  We are also saving this as an object, for later use.  We then specify the contrasts we want to run.  As a reminder, within any individual contrast, the values must add up to zero.  The contrasts I have as examples are as follows:
+  - A vs. the average of C & D
+  - B vs. C (silly since we did pairwise, but maybe this is the only pair you wanted to test)
+  - The average of A & B vs. the average of E & F
+  
+We first assign these planned contrasts to an object (`plan_con` here).  Using the `contrast()` function, we first give it our model from `emmeans()` (`b1.emm` here).  Then, we list our contrasts.  These will all fall within `list()`, and you can have as many or as few as you like.  Each one has a name (eg, `c1`), and then a vector of numbers that add up to zero.  Since we have six sprays, we need to have six numbers.  You can think of it as "c1 = c(A, B, C, D, E, F)" where you are putting values for each of the sprays.
+
+After we define our contrasts, we then test them with the `test()` function.  This takes the object containing the contrasts as an argument, and we tell it we don't want any adjustments made.
+
+```{r, owbsa-planned, include = TRUE, eval = TRUE}
+#Restate our emmeans model - get rid of pairwise comparisons
+b1.emm <- emmeans(model_b1, "spray", data = bugs)
+
+#State the contrasts
+plan_con <- contrast(b1.emm, list(c1 = c(1, 0, -0.5, -0.5, 0, 0), c2 = c(0, 1, -1, 0, 0, 0), c3 = c(0.5, 0.5, 0, 0, -0.5, -0.5)))
+
+#Test the contrasts
+test(plan_con, adjust = "none")
+
+```
+
+Looking at the output, we can see that all of the planned contrasts we chose as examples are significant.  We would interpret contrast 1 (`c1`) as the mean of A is 11 units higher than the average of C and D, or after using the A spray there were 11 more insects remaining when compared to the average of insects remaining after using spray C and spray D.
+

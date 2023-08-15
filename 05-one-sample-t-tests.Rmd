@@ -35,7 +35,7 @@ ggplot(data = trees, aes(x = Height)) +
 
 We can see that there may be a slight left skew to the data.  To further test this, we can use the Shapiro-Wilk test of normality.  Remember that for this test, a non-significant finding indicates that the assumption of normality is satisfied while a significant finding, p < .05, would mean the assumption of normality is violated.  The `shapiro.test()` function in R will be used to test this assumption.
 
-```{r ostt sw, include = TRUE, eval = TRUE}
+```{r, ostt-sw, include = TRUE, eval = TRUE}
 #Shapiro-Wilk test
 shapiro.test(trees$Height)
 ```

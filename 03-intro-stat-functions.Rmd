@@ -57,8 +57,8 @@ mode(cars$cyl)
 ## Psych Package for Data Summary
 There is also a package called psych that contains many useful functions, one of which is `describe()`.  Similar to `summary()`, it provides a number of different values.  However, it provides many more than summary: item name, item number, number of valid cases (n), mean, standard deviation, trimmed mean, median, median absolute deviation (mad), minimum, maximum, skew, kurtosis, and standard error.  
 ```{r psych, include = TRUE, eval = TRUE}
-install.packages("psych") #Install psych if you have not already
-library(psych)  #Call the package
+#Call the package
+library(psych)  
 
 describe(df)
 ```

@@ -1,0 +1,153 @@
+# Correlation and Regression {#cr}
+
+Packages used: `tidyverse`, `ggplot2`, `correlation`, `Hmisc`
+
+## Correlation
+To illustrate correlations, we will be using the `mtcars` data set that is built into R.  For simplicity sake, we will only be looking at three of the variables; we will therefore need to subset the data.  First, we will load the full mtcars data set into a dataframe, and look at what the variables are.  We can see that there are 11 variables, some of which are not continuous.  We will keep mpg (miles per gallon), hp (horse power), and wt (weight).  To do this, we make a new dataframe (`data1`) and assign our first data frame to that (`<- data`).  Then, using the `%>%` operator, we send our first dataframe to the second line.  There, we are choosing to only keep the three variables we want; we are *selecting* them: `select(c(mpg, hp, wt))`.  Since we are selecting more than one, we are using `c()`; you can think of this as meaning "combine".  After we select our columns, we check once more to make sure all our work went as we thought.
+
+
+```{r, cr-corr-data, include = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+#Load the full dataset
+data <- mtcars
+
+#Look at the included variables
+head(data)
+
+#Load tidyverse package
+library(tidyverse)
+
+#Only keep 3 variables: mpg, hp, and wt
+data1 <- data %>%
+  select(c(mpg, hp, wt))
+
+#Check once more that our data is how we'd like it
+head(data1)
+```
+
+### Examine the Data - Correlation
+
+We can visually examine the relationship between the variables by creating scatterplots.  Since there are three variables, there are three different pairs to examine: mpg-hp, hp-wt, and mpg-wt.  We can use ggplot to make scatterplots for each pair, with the `geom_point()` option.  In the first set of commands, we are telling ggplot what data to use, and `aes(x = mpg, y = hp)` defines which variable goes on which axis.
+
+```{r, cr-corr-scatter, include = TRUE, eval = TRUE, warning = FALSE, message = FALSE}
+#Load ggplot package
+library(ggplot2)
+
+#mpg-hp scatterplot
+ggplot(data1, aes(x = mpg, y = hp)) +
+  geom_point()
+
+#hp-wt scatterplot
+ggplot(data1, aes(x = hp, y = wt)) +
+  geom_point()
+
+#mpg-wt scatterplot
+ggplot(data1, aes(x = mpg, y = wt)) +
+  geom_point()
+
+```
+
+As you can imagine, this could get cumbersome rapidly.  Another way of looking at the relationship is to create multiple scatterplots in one figure.  This creates a comparison of each variable to the others.  It can be less clear to read, especially as they get large, but it can be a nice first step, before creating individual plots of interesting relationships.
+
+```{r, cr-corr-scatter-2, include = TRUE, eval = TRUE, warning = FALSE, message = FALSE}
+#Creating multiple scatterplots
+pairs(data1[, c("mpg", "hp", "wt")])
+```
+
+The plot above can be read by looking at the variable names along the center diagonal (they are put there rather than along the edges).  Intersections of columns and rows of two different variables contain scatter plots with those variables.  Compare this image to the individual scatter plots above - you will see they look the same.
+
+### Run a Correlation
+
+To run the correlation, we can take one of two approaches, depending on our data: 
+  1. Run a correlation between a single pair
+  2. Create a correlation matrix for our entire dataframe
+
+### Correlation between a single pair of variables {-}
+This test is testing if the correlation between two variables is significantly different than zero.  We can use `cor.test()` for this, specifying which two variables we want tested.
+
+```{r, cr-corr-cortest, include = TRUE, eval = TRUE}
+#Run the test
+cor.test(data1$mpg, data1$hp)
+
+```
+
+From the output, we can see that mpg and hp have a correlation significantly different than 0 (p < 0.001), with a correlation of -0.776.  This is useful if you only have two variables you are trying to compare.  However, if you have more than one variable, you will likely want to create a correlation matrix.
+
+### Correlation matrix {-} 
+If we just wanted the correlations of each pair of variables, we can use 
+One way to create a correlation matrix is to use the `rcorr()` function in the `Hmisc` package; this will create a matrix of correlations between the variables in your dataframe.  Since this function requires matrix input, we use `as.matrix()` around our dataframe to change the type for the function.  
+
+```{r, cr-corr-corrmat, include = TRUE, eval = TRUE, warning = FALSE, message = FALSE}
+#Load the Hmisc package
+library(Hmisc)
+
+#Run the test; saving out results
+c <- rcorr(as.matrix(data1)) 
+
+#View results
+c
+
+```
+
+We can see from the output of `rcorr()` that we get two different matrices:  one with the correlations between each set of variables, and another with each of the p-values.  P-values of 0, as in our table, indicate p < 0.001.  
+
+This can be challenging to reference, having to go back and forth between two tables to determine if the correlation is significant or not.  One way around this is to use the `correlation()` function in the `correlation` package. The only information we need to provide is the name of our data set.  If we were running a different type of correlation (ie, not Pearson), we could specify that by including `method = "spearman"` after our data.  
+
+```{r, cr-corr-correlationtable, include = TRUE, eval = TRUE}
+#Load the package
+library(correlation)
+
+#Run the correlation
+correlation(data1)
+```
+
+After running the code, we get a table output with each possible combination of variables as a row.  The `r` column has the correlations, followed by a 95% confidence interval for the correlations (`95% CI`), a t-test of the correlation (`t(30)`), and the p-value (`p`).  Following what we saw earlier, all three correlations are significant (p < 0.001).  Under the table, it also tells us that we had 32 observations (N = 32).  We can say that there is a significant negative linear relationship between mpg and hp as well as between mpg and wt.  Additionally, we can say that there is a significant positive relationship between hp and wt.
+
+## Regression
+
+To model a linear regression, we are going to go back to the cherry tree data set we used earlier.  As a reminder, the variables are:
+  - Girth (diameter, in inches)
+  - Height (in feet)
+  - Volume (in cubic feet)
+
+```{r, cr-reg-data, include = TRUE, eval = TRUE}
+#Assign our data to a dataframe
+df_t <- trees
+
+#Look at the data
+head(df_t)
+```
+  
+We can ask the question "How does the girth change as the trees grow taller?", which can be answered by a linear regression model.  Our DV, or "Y", is girth, while our IV, or "X", is height.  In R, to represent this relationship, we will write `Y ~ X`.  We would say that as "Y is a function of X".  The equation for this would be $$Girth = a + b*Height$$, with "a" being the intercept and "b" being the slope. 
+
+### Examine the Data - Regression
+
+We can begin to get an idea as to the relationship by plotting on a scatterplot.  This time, which variable goes where is very important: the DV needs to be assigned to y and the IV to x.  
+
+```{r, cr-reg-scatter, include = TRUE, eval = TRUE, warning = FALSE, message = FALSE}
+#ggplot2 is already loaded from above, so we don't need to do it again
+ggplot(data = df_t, aes(x = Height, y = Girth)) +
+  geom_point()
+```
+
+Looking at the scatterplot, we can see there seems to be a slight positive relationship between girth and height of cherry trees.  
+
+### Run the Regression
+We can now run the regression, which will give us values for our slope and intercept.  To do this, we will use the `lm()` function, or 'linear model'.  We will be saving the output as an object in order to get the summary from it.  Below, we can see that we first put in the formula `Girth ~ Height`, followed by specifying our data (`data = df_t`).
+
+
+```{r, cr-reg-regression, include = TRUE, eval = TRUE}
+#Make the linear regression model
+model <- lm(Girth ~ Height, data = df_t)
+
+#Look at model output
+model
+
+#Ask for more model information
+summary(model)
+```
+
+When we run the first line of code, nothing happens, because the output is being saved in the object `model`.  If we take a look at what is provided as basic output, it provides us with the coefficients.  This allows us to input this into our equation from above, substituting "Intercept" for "a" and "Height" for "b": $$Girth = -6.1884 + 0.2557*Height$$
+
+However, we do not know if height is a significant predictor of girth.  Running a summary of the model with `summary(model)` gives us more information about the statistics on the model.  This gives us more information about the coefficients: their estimate, their standard error, and significance.  The t-test on the coefficients is testing if they are significantly different than zero; we can see that the slope coefficient for Height is significantly different than zero (p = 0.002).  
+
+At the bottom of the summary, we get the $R^{2}$ (`Multiple R-squared`) value, the F-statistic, and the associated p-value.  We can see that our $R^{2}$ is 0.2697, F(1, 29) = 10.71, and p = 0.002, indicating that this model better fits the data than a model with no variables.

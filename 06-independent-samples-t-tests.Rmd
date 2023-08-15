@@ -8,9 +8,13 @@ Like the One Sample T-Test, we will go through:
 
 Packages used:`psych`, `ggplot2`, `tidyverse`, `qqplotr`, `car`, `effectsize`.   
 
-We will also be using a data set more appropriate to an Independent samples t-test, the sleep data set.  This data is looking at the effect of two different soporific (sleep) drugs and if they increase or decrease the amount of sleep students get compared to control.  We have three variables: extra (increase in hours of sleep), group (which drug was given), and ID (patient ID). 
+We will also be using a data set more appropriate to an Independent samples t-test, the sleep data set.  This data is looking at the effect of two different soporific (sleep) drugs and if they increase or decrease the amount of sleep students get compared to control.  
+We have three variables: 
+- extra: increase in hours of sleep 
+- group: which drug was given
+- ID: patient ID 
 
-```{r ostt data, include = TRUE, eval = TRUE}
+```{r, istt-data, include = TRUE, eval = TRUE}
 #Assign data set to an object
 df <- sleep
 
@@ -21,7 +25,7 @@ head(df)
 ## Descriptives
 
 Since we have two groups we are comparing, and we'd like a bit more information than provided by `summary()`, we will use the `describeBy()` function in the `psych` package.  This function takes the form $$describeBy(x, group = groupingvar)$$ and gives basic summary statistics by group. 
-```{r istt descriptives, include = TRUE, eval = TRUE, warning = FALSE}
+```{r, istt-descriptives, include = TRUE, eval = TRUE, warning = FALSE}
 #Call the package
 library(psych)
 
@@ -31,9 +35,9 @@ describeBy(df$extra, group = df$group)
 
 In our output, we see that we get two different sets of descriptive statistics, one for group = 1 (`group: 1`), and another for group = 2 (`group: 2`).  In each output, it tells us how many individuals (`n`), the mean and standard deviation (`mean` and `sd`, respectively), and the skew and kurtosis (`skew` and `kurtosis`) of each group, among other things.
 
-A box plot can be helpful to identify if there are outliers in our groups.  We will make a boxplot, again using `ggplot2`.  In the code below, we are first defining our data (`data = df`) and x (`x = group`) and y (`y = extra`) values.  Our x value is our grouping variable, and our y value is the one we are comparing; in our case, how many extra hours of sleep.  The next line calls the boxplot function (`geom_boxplot()`), and the last one prints each data point as a dot on the box plot (`geom_jitter()`).  The last argument can be left blank, but it may be easier to compare sparse data points when they're not as spread out horizontally, so the `width = .2` argument squishes them together a bit.  The opposite is true with larger datasets - you may want them more spread out!  In which case, you can leave that argument blank.  
+A boxplot can be helpful to identify if there are outliers in our groups.  We will make a boxplot, again using `ggplot2`.  In the code below, we are first defining our data (`data = df`) and x (`x = group`) and y (`y = extra`) values.  Our x value is our grouping variable, and our y value is the one we are comparing; in our case, how many extra hours of sleep.  The next line calls the boxplot function (`geom_boxplot()`), and the last one prints each data point as a dot on the box plot (`geom_jitter()`).  The last argument can be left blank, but it may be easier to compare sparse data points when they're not as spread out horizontally, so the `width = .2` argument squishes them together a bit.  The opposite is true with larger datasets - you may want them more spread out!  In which case, you can leave that argument blank.  
 
-```{r istt box, include = TRUE, eval = TRUE, warning = FALSE, message = FALSE}
+```{r, istt-box, include = TRUE, eval = TRUE, warning = FALSE, message = FALSE}
 #Call ggplot
 library(ggplot2)
 
@@ -48,7 +52,7 @@ Since we have two groups, we have to test assumptions for each group, rather tha
 
 ### Normality
 We start off by running a Shapiro-Wilk test to test for normality.  Recall from the one-sample t-test that we used the `shapiro.test()` function to get this information.  The output contained the W statistic, or Shaprio-Wilk statistic, and the p-value.  Had we assigned that to an object, we could see what information it contained, **and** what it called that information.  After running the code below, if we look in our Environment Window and click on the object "SW", we see what is in Figure \@ref(fig:istt-SW).
-```{r ostt reminder, include = TRUE, eval = TRUE}
+```{r, ostt-reminder, include = TRUE, eval = TRUE}
 #SW test for trees
 shapiro.test(trees$Height)
 
@@ -63,9 +67,9 @@ After running the code above, if we look in our Environment Window and click on 
 knitr::include_graphics(rep("istt_SW.png"))
 ```
 
-In the code below, we are first calling the `tidyverse` package (`library(tidyverse)`) before moving on to running the Shapiro-Wilk test.  Then, we specify our data (`df`) and send it on to the next line (`%>%`).  We specify which variable R should group by with the `group_by()` function - for us, it is the 'group' variable. [NOTE: this is a bit confusing, and your grouping variable should probably be named something else, like "treatment" or "drug".]  So, the line `group_by(group)` is taking our dataframe and now grouping it according to group membership.  Then, we send that on (`%>%`) to the Shapiro-Wilk test.  It looks different than before, becuse we are asking it to report out by group rather than just the whole dataset.  
+In the code below, we are first calling the `tidyverse` package (`library(tidyverse)`) before moving on to running the Shapiro-Wilk test.  Then, we specify our data (`df`) and send it on to the next line (`%>%`).  We specify which variable R should group by with the `group_by()` function - for us, it is the 'group' variable. [NOTE: this is a bit confusing, and your grouping variable should probably be named something else, like "treatment" or "drug".]  So, the line `group_by(group)` is taking our dataframe and now grouping it according to group membership.  Then, we send that on (`%>%`) to the Shapiro-Wilk test.  It looks different than before, because we are asking it to report out by group rather than just the whole dataset.  
 
-We start with the `summarise()` function, and define what our columns will  be (our rows have alread been taken care of by `group_by()`).  The Shapiro-Wilk statistic is named "S-W Statistic", and we say that we'd like that value to be the statistic from the function: `"S-W Statistic" = shapiro.test(extra)$statistic`.  We see that we are still calling the `shapiro.test()` function on the 'extra' column (`shapiro.test(extra)`), but then we are including `$statistic` because that's the value we want in this column.  In the second column we'd like the p-value from the `shapiro.test()` function: `"p-value" = shapiro.test(extra)$p.value`.  
+We start with the `summarise()` function, and define what our columns will  be (our rows have already been taken care of by `group_by()`).  The Shapiro-Wilk statistic is named "S-W Statistic", and we say that we'd like that value to be the statistic from the function: `"S-W Statistic" = shapiro.test(extra)$statistic`.  We see that we are still calling the `shapiro.test()` function on the 'extra' column (`shapiro.test(extra)`), but then we are including `$statistic` because that's the value we want in this column.  In the second column we'd like the p-value from the `shapiro.test()` function: `"p-value" = shapiro.test(extra)$p.value`.  
 
 ```{r ostt sw, include = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
 #Call tidyverse package
@@ -175,7 +179,7 @@ t.test(extra ~ group, data = df, var.equal = TRUE)
 
 ```
 
-From our output, we see the t-statistic (`t = -1.8608`), df (df = `18`), and p-value (`p-value = 0.07919`).  Since p > 0.5, we would conclude that the two groups do not differ on the amount of extra sleep they received.  Our output also provides us with a 95% confidence interval (`95 percent confidence interval: -3.363874, 0.203874`), which we can see includes 0.  Lastly, the output provides us with sample means (`mean in group 1 mean in group 2`).  
+From our output, we see the t-statistic (`t = -1.8608`), df (`df = 18`), and p-value (`p-value = 0.07919`).  Since p > 0.5, we would conclude that the two groups do not differ on the amount of extra sleep they received.  Our output also provides us with a 95% confidence interval (`95 percent confidence interval: -3.363874, 0.203874`), which we can see includes 0.  Lastly, the output provides us with sample means (`mean in group 1 mean in group 2`).  
 
 ## Calculating Cohen's d
 As with the one sample t-test, we can calculate an effect size.  This can be done by grabbing the values from the descriptive statistics and doing it by hand, or by using the `cohens_d()` function.

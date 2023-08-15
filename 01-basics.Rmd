@@ -4,7 +4,7 @@ To begin, you will need to install R!  This is a first step, which is frequently
 
 To download R, visit <https://cran.r-project.org/>, and select the correct link for your operating system.  Windows users will select the "base" option.  R Studio can be found at <https://posit.co/download/rstudio-desktop/>.  You will see on this page that it directs you to install R if you have not already.  If you have, proceed on to installing R Studio.  
 
-See the videos xxx and xxx for an introduction to R, R studio, and what the different windows you will see in R studio do.
+See the videos <https://youtu.be/0FUB-CGRFR4> and <https://youtu.be/DQe-kNqm3L4> for download instructions for R and R studio.  For a brief description of what the different windows you will see in R studio do, please see <https://youtu.be/Ur1kUAsfAU4>.
 
 
 ## Commenting Code

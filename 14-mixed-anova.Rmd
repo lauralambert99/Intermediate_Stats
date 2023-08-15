@@ -1,0 +1,201 @@
+# Mixed ANOVA {#ma}
+
+Packages used: `datarium`, `psych`, `tidyverse`, `ggplot2`, `qqplotr`, `viridis`, `car`, `emmeans`, `afex`, `rstatix`  
+
+The data:
+We will be using the "anxiety" data set from the `datarium` package, which has anxiety score (as a DV), measured at three time points (within-subjects IV) on individuals in three different physical activity groups.  The physical activity groups are basal, moderate, and high; in the dataframe they are grp1, grp2, and grp3, respectively.
+
+```{r, ma-data, include = TRUE, eval = TRUE, warning = FALSE}
+#Call datarium package
+library(datarium)
+
+#Assign data set to an object
+anx <- anxiety
+
+#See what it looks like
+head(anx)
+```
+
+Similar to the one-way and two-way within subjects ANOVA, we will need to gather the three different time columns into one column for our analyses. There will still be a group column, and multiple rows per ID.  We first define a new dataframe, `anx_long`, and assign our `anx` dataframe to it.  Then `%>%` sends the `anx` dataframe to the next line.  `gather()` is from the tidyverse package and "gathers" a value across columns.  We specify the "key" column name with `key = "time"`, and what value we want created with `value = "score"`.  We then specify what columns we want "gathered" : `t1, t2, t3`.  
+
+We then need to convert the `time` column from a character column (something that R interprets as words) to a factor column (something that R interprets as different levels of one variable).  The `as.factor()` function will allow us to do that, and takes as an argument the column you want to change (`anx_long$time`).  Since we want the `time` column to be changed, we need to reassign the change **back** to the `time` column.  
+
+After doing all that, we check our work before moving on.
+
+```{r, ma-long, include = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+#Call tidyverse
+library(tidyverse)
+
+#Gather columns t1, t2 and t3 into long format
+anx_long <- anx %>%
+  gather(key = "time", value = "score", t1, t2, t3)
+
+#Convert time column to a factor
+anx_long$time <- as.factor(anx_long$time)
+
+#Check work
+head(se2_long)
+```
+
+## Descriptive Statistics
+We will get descriptive statistics for each time point as well as each treatment group combination (so, 3 time points x 3 exercise groups = 9 tables!), using the `describeBy()` function from the `psych` package.  We start by telling the function what we want summarized (`anx_long$score`).   Then, since we have two variables we want combinations of, we include them both, separated by a colon: (`anx_long$group : anx_long$time`).  
+
+```{r, twwsa-descriptives, include = TRUE, eval = TRUE}
+#Load psych package
+library(psych)
+
+#Get descriptive statistics by group
+describeBy(anx_long$score,
+           group = anx_long$group : anx_long$time)
+```
+
+In the output, we can see there are the expected nine sets of descriptive statistics - one for each time point and group combination (ie, time 1-grp1, time 1-grp2, etc.).  We get the mean score for each combination, along with the other statistics we are accustomed to.  We can also use these outputs to confirm that there are the same number of responses for each time point - if there were not, this would indicate we were missing data.  
+
+
+A boxplot can be used to visually identify if there are outliers in any of the combinations.  We will make a boxplot using `ggplot2` and using `viridis` for our color scale.  In the code below, we first define our data (`data = anx_long`) and x (`x = time`) and y (`y = score`) values.  Our x value is our grouping variable (time) that we want on the x-axis, and our y value is the one we are comparing (scores).  The next line calls the boxplot function (`geom_boxplot()`).  We added the argument `aes(color = group)` to allow different colors per exercise group.  `geom_jitter()` prints each data point as a dot on the box plot, and the argument `aes(color = group)` again color-codes the dots by treatment.  The next line, `scale_color_viridis(discrete = TRUE)` assigns the viridis color scale to the colors in the plot, which is a colorblind friendly scale.  `discrete = TRUE` is used because we are not using all continuous variables.  The last line is a theme line, and addresses details such as plot background color. 
+
+```{r, ma-box, include = TRUE, eval = TRUE, warning = FALSE, message = FALSE}
+#Call ggplot
+library(ggplot2)
+
+#Also call viridis
+library(viridis)
+
+#Generate a boxplot
+ggplot(data = anx_long, aes(x = time, y = score)) + 
+  geom_boxplot(aes(color = group)) +
+  geom_jitter(aes(color = group), width = .25) +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+```
+
+We can see that there does not appear to be any extreme outliers, as long as we are careful to color-match.  This can get visually challenging, leading to errors in interpretation.  Since each IV has three levels, switching which IV is the grouping variable and which is on the x-axis will not help in this case. 
+
+Another option for identifying outliers is to create the boxplot without the data points being shown, and instead use a function to determine if there are any extreme outliers, as we do below.  The `ggplot` object is the same as above, except we removed the `geom_point()` line, which removed the individual data points.  Next, we have a call to the `rstatix` package, which contains the `identify_outliers()` function.  To get there, we first provide our data (`anx_long`), and send that (`%>%`) to the grouping function (`group_by()`) where we group by both time and exercise group.  Then, we use the `identify_outliers()` function on the score to determine if there are any.  
+
+```{r, ma-box2, include = TRUE, eval = TRUE, warning = FALSE, message = FALSE}
+#Generate a boxplot - no dots this time
+ggplot(data = anx_long, aes(x = time, y = score)) + 
+  geom_boxplot(aes(color = group)) +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+
+#Also test for extreme outliers
+#Call rstatix package
+library(rstatix)
+
+#Test for outliers in each combination
+anx_long %>%
+  group_by(time, group) %>%
+  identify_outliers(score)
+```
+
+The graph is visually cleaner - no data points to compare to box plots.  And the output for the `identify_outliers()` function is empty (`<0 rows>`).  This means there are no extreme outliers in our data.  If we compare that to what we could see in the first box plot, we can see they are in agreement.
+
+
+
+## Assumptions
+We will be testing for meeting the assumption of normality, homogeneity of covariances, and sphericity.
+
+### Normality
+
+### Shapiro-Wilk {-}
+We will begin by running a Shapiro-Wilk test to test each combination of time and exercise group for normality.  The `shapiro.test()` will allow us to get the test, though we will need to assign it to an object and ask for the information in a table.  Specifically, we will be asking for the W statistic, or Shaprio-Wilk statistic, and the p-value from the test.  
+
+In the code below, we first call the `tidyverse` package to allow us to split by group before moving on to running the Shapiro-Wilk test.  Then, we specify our data (`anx_long`) and send it on to the next line (`%>%`).  The line `group_by(time, group)` takes our dataframe and groups it by both time and exercise group.  Then, we send that on (`%>%`) to the Shapiro-Wilk test.  
+
+Running the Shapiro-Wilk test, we start with the `summarise()` function, and define what our columns will be.  The first column is the Shapiro-Wilk statistic, named "S-W Statistic", and we specify that the value in this column should be the statistic from the function: `"S-W Statistic" = shapiro.test(score)$statistic`.  We see that we are calling the `shapiro.test()` function on the 'score' column (`shapiro.test(score)`), but then we are including `$statistic` because that's the value from the Shapiro test we want in this column.  In the second column we specify that the values should be the p-value from the `shapiro.test()` function: `"p-value" = shapiro.test(score)$p.value`.  
+
+```{r, ma-sw, include = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+#Call tidyverse
+library(tidyverse)
+
+#Run the Shapiro-Wilk test
+anx_long %>%   
+  group_by(time, group) %>%    
+  summarise("S-W Statistic" = shapiro.test(score)$statistic,   
+            "p-value" = shapiro.test(score)$p.value)
+```
+
+For each combination, p > 0.05, indicating that no distribution is significantly different than a normal distribution.
+
+### Histogram {-}
+
+We can also check the normality assumption visually, by generating histograms of each time-group combination.  Given that we have nine possible combinations, we will be creating separate histograms for each.
+
+We will use a stacked histogram, by adding the function `facet_grid(time ~ group)` to our ggplot object.  This will generate one histogram per combination, in a grid layout rather than a truly "stacked" layout.  This phrasing (`time ~ group`) is saying put the different times on the "y axis" of the overall grid, and different exercise groups along the "x axis" of the grid.  If you'd like the grid to be inverted, with education level across the top and gender along the side, you would use `gender ~ education_level`. We also re-named the group labels to make them more human-readable; if we had not, we would need to rememeber what grp1, grp2, and grp3 represented.  After reassigning names to an object with `l <- c(grp1 = "basal", grp2 = "moderate", grp3 = "high")`, we use the `labeller` argument to say what we would like renamed (`labeller = labeller(group = l)`). At the end, `theme_minimal()` is addressing how the graphs look - getting rid of the grey background, for example.
+
+
+```{r, ma-hist, include = TRUE, eval = TRUE, warning = FALSE, message = FALSE}
+#Make more user-friendly labels
+l <- c(grp1 = "basal", grp2 = "moderate", grp3 = "high")
+
+#Generate side-by-side histograms
+ggplot(data = anx_long, aes(x = score)) +
+  geom_histogram() +
+  facet_grid(time ~ group, labeller = labeller(group = l)) +
+  theme_minimal()
+```  
+
+These histograms show that, visually, all the different combinations seem to be normally distributed.
+
+### QQ Plot {-}
+Another visual inspection for normality we can do is a Q-Q plot.  We will use the package `qqplotr` to make these, as an addition to `ggplot2`.  
+
+Breaking down the code we will use to generate the plot:  
+  1.  `ggplot(data = job, mapping = aes(sample = score, color = education_level, fill = education_level)) +` is our call to ggplot.  We are defining what data to use (`data = job`), and then giving some arguments to the `aes()` function.  `sample = score` says to use the variable 'score',  `color = education_level` is asking for each of the educational levels to be a different color, and `fill = education_level` corresponds to the filled in portion, again different colors for each educational level.  To ensure colorblind friendliness, we will specify a particular color scale below. 
+  2.  `stat_qq_band(alpha=0.5, conf=0.95, qtype=1, bandType = "ts") +` is our first function using the `qqploter` package, and contains arguments about the confidence bands.  This is defining the alpha level (`alpha = 0.5`) and the confidence interval (`conf = 0.95`) to use for the confidence bands.  `bandType = "pointwise"` is saying to construct the confidence bands based on Normal confidence intervals.  
+  3.  `stat_qq_line(identity = TRUE) +` is another call to the `qqplottr` package and contains arguments about the line going through the qq plot.  The argument `identity = TRUE` says to use the identity line as the reference to construct the confidence bands around.
+  4.  `stat_qq_point(col = "black") +`  is the last call to the `qqplottr` package and contains arguments about the data points. `col = "black"` means we'd like them to be black.  
+  5.  `facet_grid((time ~ group), scales = "free", labeller = labeller(group = l)) +` uses `facet_grid` rather than `facet_wrap`, as we have been, to better label our plots.  This is sorting by time and exercise group combination (`time ~ group`), and creating a qq plot for each of the different combinations.  The `scales = "free"` refers to the scales of the axes; by setting them to "free" we are allowing them to freely vary between each of the graphs.  If you want the scale to be fixed, you would use `scale = "fixed"`.  We are again using the same labelling argument from the histograms for readability (`labeller = labeller(group = l))`).  Since we have already set the labels above, we do not need to reset them here.  
+  6.  `labs(x = "Theoretical Quantiles", y = "Sample Quantiles") +` is a labeling function.  Here, we are labeling the x and y axis (`x =` and `y =` respectively). 
+  7.  `scale_fill_viridis(discrete = TRUE)` is specifying a color fill that is colorblind friendly as well as grey-scale friendly.  Since these are discrete groups, we add `discrete = TRUE`.
+  8.  `scale_color_viridis(discrete = TRUE)` is again using a colorblind friendly scale for the outlines, to match the fill.
+  9.  Lastly, `theme_bw()` is giving an overall preset theme to the graphs - this touches on things such as background, axis lines, grid lines, etc.
+
+
+```{r, twbsa-qq, include = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+#Call qqplotr
+library(qqplotr)
+
+#Call viridis
+library(viridis)
+
+#Perform QQ plots for each combination
+ggplot(data = anx_long, mapping = aes(sample = score, color = group, fill = group)) +
+  stat_qq_band(alpha = 0.5, conf = 0.95, bandType = "pointwise") +
+  stat_qq_line(identity = TRUE) +
+  stat_qq_point(col = "black") +
+  facet_grid((time ~ group), scales = "free", labeller = labeller(group = l)) +
+  labs(x = "Theoretical Quantiles", y = "Sample Quantiles") + 
+  scale_fill_viridis(discrete = TRUE) +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+
+```
+
+Looking at the Q-Q plot, we can see that all the data points fall within the 95% range, as well as falling pretty neatly along the trend line.  The colors aren't critical here, but it does make it nicer to look at.  
+
+### Detrended QQ Plot {-}
+We can also make a detrended Q-Q plot using the same code but adding `detrend = TRUE` to all of the `stat_qq_` functions.  
+
+```{r, twbsa-de-qq, include = TRUE, eval = TRUE, message = FALSE, warning = FALSE}
+#Perform detrended QQ plots for each combination
+ggplot(data = anx_long, mapping = aes(sample = score, color = group, fill = group)) +
+  stat_qq_band(alpha = 0.5, conf = 0.95, bandType = "pointwise", detrend = TRUE) +
+  stat_qq_line(identity = TRUE, detrend = TRUE) +
+  stat_qq_point(col = "black", detrend = TRUE) +
+  facet_grid((time ~ group), scales = "free", labeller = labeller(group = l)) +
+  labs(x = "Theoretical Quantiles", y = "Sample Quantiles") + 
+  scale_fill_viridis(discrete = TRUE) +
+  scale_color_viridis(discrete = TRUE) +
+  theme_bw()
+```
+
+Looking at both the regular and detrended Q-Q plots, we can see that all of the educational level and gender combinations are normally distributed.
+
+### Homogeneity of Covariances
+We will be testing this using Box's M test, and requires us to use our original data set (`anx`) in the wide format.  The `rstatix` package has the `box_m()` function that will perform the test, and we only need to provide the data and the grouping variable.  We want to perform this on only the time columns of our data, so the data argument looks like `anx[, 3:5]`.  This is saying we want the `anx` dataset, all rows (the empty bit before the ","), but only the third through fifth columns (`[, 3:5]`).  If you look back at our wide-format data, the time columns (t1 - t3) are columns 3-5. 
+```{r, ma-box-m, include = TRUE, eval = TRUE}
+box_m(anx[, 3:5], anx$group)
+```

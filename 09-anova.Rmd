@@ -1,4 +1,12 @@
-# Sharing your book
+# ANOVAs {-}
+
+The following chapters will address the different types of ANOVAs performed in this class:  
+
+- [Chapter 9](#owbsa) will address One-Way Between Subjects ANOVA
+- [Chapter 10](#owwsa) will address One-Way Within Subjects ANOVA
+- [Chapter 11](#twbsa) will address Two-Way Between Subjects ANOVA
+
+
 
 ## Publishing
 
@@ -14,18 +22,5 @@ Bookdown HTML books will provide HTML metadata for social sharing on platforms l
 
 
 
-This `gitbook` uses the same social sharing data across all chapters in your book- all links shared will look the same.
-
-Specify your book's source repository on GitHub using the `edit` key under the configuration options in the `_output.yml` file, which allows users to suggest an edit by linking to a chapter's source file. 
-
-Read more about the features of this output format here:
-
-https://pkgs.rstudio.com/bookdown/reference/gitbook.html
-
-Or use:
-
-```{r eval=FALSE}
-?bookdown::gitbook
-```
 
 
